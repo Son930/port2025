@@ -1,0 +1,50 @@
+.sliding-border-button {
+    background: transparent;
+    padding: 12px 36px;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s ease-in-out;
+}
+
+.sliding-border-button::before {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: -100%;
+    width: 100%;
+    height: 2px;
+    background: #ff1e8f;
+    transition: all 0.4s ease-in-out;
+}
+
+.sliding-border-button:hover::before {
+    left: 0;
+}
+
+.sliding-border-button:hover {
+    color: white    ;
+}
+
+.nav-link {
+  position: relative;
+  padding-bottom: 4px;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: #2563eb; /* Your primary color */
+  transition: width 0.3s ease;
+}
+
+.nav-link:hover::after,
+.nav-link.active::after {
+  width: 100%;
+}

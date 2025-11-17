@@ -1,0 +1,36 @@
+.custom-cursor {
+  position: fixed;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #000;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition: all 0.1s ease;
+  z-index: 9999;
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.custom-cursor.hidden {
+  opacity: 0;
+}
+
+.custom-cursor.clicked {
+  transform: translate(-50%, -50%) scale(0.7);
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.custom-cursor.link-hovered {
+  transform: translate(-50%, -50%) scale(1.5);
+  border-color: #ff0000;
+  background-color: rgba(255, 0, 0, 0.2);
+}
+
+/* Hide default cursor */
+body {
+  cursor: none !important;
+}
+
+body * {
+  cursor: none !important;
+}

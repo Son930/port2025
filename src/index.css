@@ -1,0 +1,237 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Zen+Dots&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import "tailwindcss";
+
+/* Custom CSS Variables */
+:root {
+  --neon-pink: #ff00ff;
+  --neon-blue: #00ffff;
+  --neon-purple: #8a2be2;
+  --neon-green: #00ff00;
+  --neon-yellow: #ffff00;
+  --neon-orange: #ff6600;
+  --dark-bg: #0a0a0a;
+  --card-bg: rgba(255, 255, 255, 0.05);
+  --glass-bg: rgba(255, 255, 255, 0.1);
+}
+
+/* Base Styles */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Clofie', serif;
+  background-color: var(--dark-bg);
+  color: #e5e5e5;
+  overflow-x: hidden;
+}
+
+/* Font Face Declarations */
+@font-face {
+  font-family: "HumbleSpark";
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/humble-spark-3-1751449720-0/Humble-Spark.otf") format("opentype");
+}
+
+@font-face {
+  font-family: "Superline";
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/Superline-Regular.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "SuperlineItalic";
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/Superline-LineItalic.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "SuperlineOutline";
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/Superline-Outline.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "SuperlineOutlineItalic";
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/Superline-OutlineItalic.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Superline-line";
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/Superline-Line.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Superline-line-italic";
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/Superline-LineItalic.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Clofie";
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/clofieregular-yy04q.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Plutur";
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/plutur-1751451499-0/Plutur.ttf") format("truetype");
+}
+
+/* Scroll Behavior */
+.scroll-container {
+  scroll-behavior: smooth;
+}
+
+/* Scroll Snap Support */
+@supports (scroll-snap-align: start) {
+  .snap-mandatory {
+    scroll-snap-type: y mandatory;
+  }
+  
+  .snap-start {
+    scroll-snap-align: start;
+  }
+}
+
+/* Fallback for older browsers */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Typography System */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Superline', sans-serif;
+  font-weight: normal;
+  letter-spacing: -0.03em;
+}
+
+h1 {
+  font-size: clamp(4rem, 10vw, 10rem);
+  line-height: 1.1;
+}
+
+h2 {
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.2;
+}
+
+body, p, a, li {
+  font-family: 'Clofie', serif;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: #e5e5e5;
+}
+
+/* Button Styles */
+.btn-classic {
+  font-family: 'Superline', sans-serif;
+  padding: 12px 24px;
+  border: 1px solid white;
+  background: transparent;
+  letter-spacing: 0.1em;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.btn-classic:hover {
+  background: white;
+  color: black;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Section Layout */
+.content-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 80px 20px;
+}
+
+/* Custom Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes glow {
+  0% { box-shadow: 0 0 5px var(--neon-blue), 0 0 10px var(--neon-blue), 0 0 15px var(--neon-blue); }
+  100% { box-shadow: 0 0 10px var(--neon-blue), 0 0 20px var(--neon-blue), 0 0 30px var(--neon-blue); }
+}
+
+@keyframes matrix {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+/* Utility Classes */
+.text-gradient {
+  background: linear-gradient(135deg, var(--neon-pink), var(--neon-blue), var(--neon-purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glass-effect {
+  background: rgba(255, 255, 255, 0.1);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.neon-border {
+  border: 1px solid var(--neon-blue);
+  box-shadow: 0 0 10px var(--neon-blue);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .content-section {
+    padding: 40px 20px;
+  }
+  
+  h1 {
+    font-size: clamp(3rem, 8vw, 6rem);
+  }
+  
+  h2 {
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
+  }
+}
+
+/* Smooth Transitions */
+* {
+  transition: all 0.3s ease;
+}
+
+/* Focus States */
+button:focus,
+a:focus {
+  outline: 2px solid var(--neon-blue);
+  outline-offset: 2px;
+}
+
+/* Selection */
+::selection {
+  background: var(--neon-blue);
+  color: black;
+}
+
+::-moz-selection {
+  background: var(--neon-blue);
+  color: black;
+}

@@ -1,0 +1,57 @@
+.text-swap-container {
+
+}
+
+.text-swap-word {
+  position: absolute;
+  white-space: nowrap;
+  transition: opacity 0.5s, transform 0.5s;
+}
+
+/* Fade animation */
+.fade.out {
+  opacity: 0;
+}
+.fade.in {
+  opacity: 1;
+}
+
+/* Slide up animation */
+.slide-up.out {
+  transform: translateY(-100%);
+  opacity: 0;
+}
+.slide-up.in {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* Slide down animation */
+.slide-down.out {
+  transform: translateY(100%);
+  opacity: 0;
+}
+.slide-down.in {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* Flip animation */
+.flip.out {
+  transform: rotateX(90deg);
+  opacity: 0;
+}
+.flip.in {
+  transform: rotateX(0deg);
+  opacity: 1;
+}
+
+/* Rotate animation */
+.rotate.out {
+  transform: rotate(180deg) scale(0);
+  opacity: 0;
+}
+.rotate.in {
+  transform: rotate(0) scale(1);
+  opacity: 1;
+}
