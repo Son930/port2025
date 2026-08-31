@@ -1,115 +1,117 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { MoonIcon, SunIcon } from "@heroicons/react/24/outline";
+import { useTheme } from "../context/ThemeProvider";
 
-const Navbar = () => {
+const NAV_LINKS = [
+  { name: "About", id: "know me" },
+  { name: "Work", id: "projects" },
+  { name: "Skills", id: "skills" },
+  { name: "Contact", id: "footer" },
+];
+
+export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const { theme, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 40);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const scrollToSection = (id) => {
-    const element = document.getElementById(id.toLowerCase());
-    if (element) {
-      element.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+    const wasOpen = isOpen;
+    setIsOpen(false);
+    const go = () => {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    if (wasOpen) {
+      window.setTimeout(go, 280);
+    } else {
+      go();
     }
   };
 
-  const links = [
-    { name: "LANDING", id: "landing" },
-    { name: "KNOW ME", id: "know me" },
-    { name: "PROJECTS", id: "projects" },
-    { name: "SKILLS", id: "skills" },
-    { name: "MOSAIC", id: "mosaic" },
-    { name: "CONTACT ME", id: "footer" },
-  ];
-
-  const navItemVariant = {
-    hidden: { opacity: 0, y: -10 },
-    visible: (i) => ({
-      opacity: 1,
-      y: 0,
-      transition: {
-        delay: i * 0.1,
-        duration: 0.4,
-        ease: "easeOut",
-      },
-    }),
-  };
+  const navShell = scrolled
+    ? "bg-[var(--surface)]/95 backdrop-blur-sm border-b border-[var(--border-classic)]"
+    : "bg-transparent";
 
   return (
-    <nav className="fixed w-full top-0 left-0 z-50 bg-black/20 backdrop-blur-md border-b border-white/10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav className={`fixed w-full top-0 left-0 z-50 transition-colors duration-300 ${navShell}`}>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo or Branding */}
-          <div className="flex-shrink-0 text-neonBlue font-bold text-xl tracking-wide">
-            <span className="hidden md:inline-block font-plutur">SUNNY</span>
-          </div>
+          <button
+            type="button"
+            onClick={() => scrollToSection("landing")}
+            className="font-cormorant text-sm tracking-[0.14em] uppercase text-[var(--ink)] hover:text-[var(--accent)] transition-colors"
+          >
+            Sunny Sondhi
+          </button>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            {links.map((link, i) => (
-              <motion.a
+          <div className="hidden md:flex items-center gap-8">
+            {NAV_LINKS.map((link) => (
+              <button
                 key={link.id}
-                custom={i}
-                initial="hidden"
-                animate="visible"
-                variants={navItemVariant}
+                type="button"
                 onClick={() => scrollToSection(link.id)}
-                className="text-white uppercase text-sm font-medium hover:text-neonBlue transition-colors relative group cursor-pointer font-clofie"
+                className="font-cormorant text-sm tracking-[0.1em] uppercase text-[var(--ink)] hover:text-[var(--accent)] transition-colors"
               >
                 {link.name}
-                <span className="absolute -bottom-1 left-0 w-0 h-px bg-neonBlue transition-all group-hover:w-full"></span>
-              </motion.a>
+              </button>
             ))}
           </div>
 
-          {/* Mobile Toggle */}
-          <div className="md:hidden">
+          <div className="flex items-center gap-1">
             <button
+              type="button"
+              onClick={toggleTheme}
+              className="p-2 text-[var(--ink-muted)] hover:text-[var(--accent)] transition-colors"
+              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {theme === "dark" ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
+            </button>
+
+            <button
+              type="button"
               onClick={() => setIsOpen(!isOpen)}
-              className="text-white hover:text-neonBlue focus:outline-none transition-colors duration-200"
-              aria-label="Toggle menu"
+              className="md:hidden p-2 text-[var(--ink)]"
+              aria-label={isOpen ? "Close menu" : "Open menu"}
+              aria-expanded={isOpen}
             >
               {isOpen ? (
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               ) : (
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               )}
             </button>
           </div>
         </div>
 
-        {/* Mobile Menu */}
         <AnimatePresence>
           {isOpen && (
             <motion.div
-              key="mobile-menu"
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.4 }}
-              className="md:hidden bg-black/90 backdrop-blur-lg border-t border-white/10"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.25 }}
+              className="md:hidden overflow-hidden border-t border-[var(--border-classic)] bg-[var(--surface)]"
             >
-              <div className="px-4 py-4 space-y-2">
-                {links.map((link, i) => (
-                  <motion.a
+              <div className="px-2 py-3 space-y-1">
+                {NAV_LINKS.map((link) => (
+                  <button
                     key={link.id}
-                    href={`#${link.id}`}
-                    initial={{ opacity: 0, x: -30 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.1 * i, duration: 0.3 }}
-                    onClick={() => {
-                      scrollToSection(link.id);
-                      setIsOpen(false);
-                    }}
-                    className="block px-3 py-2 text-white uppercase text-sm font-medium hover:bg-white/10 hover:text-neonBlue rounded-md transition-colors font-clofie"
+                    type="button"
+                    onClick={() => scrollToSection(link.id)}
+                    className="block w-full text-left px-3 py-3 font-cormorant text-base tracking-[0.1em] uppercase text-[var(--ink)] hover:bg-[var(--surface-muted)] transition-colors"
                   >
                     {link.name}
-                  </motion.a>
+                  </button>
                 ))}
               </div>
             </motion.div>
@@ -118,6 +120,4 @@ const Navbar = () => {
       </div>
     </nav>
   );
-};
-
-export default Navbar;
+}

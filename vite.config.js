@@ -6,7 +6,7 @@ import tailwindcss from "@tailwindcss/vite";
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [tailwindcss(), react()],
-  assetsInclude: ["**/*.glb", "**/*.gltf"], // Add this line
+  assetsInclude: ["**/*.glb", "**/*.gltf", "**/*.obj"],
   css: {
     postcss: {
       plugins: [tailwindcss, autoprefixer],

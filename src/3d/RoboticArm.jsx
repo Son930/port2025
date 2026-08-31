@@ -1,179 +1,243 @@
-/* eslint-disable react/prop-types */
 /* eslint-disable react/no-unknown-property */
-import React, { useRef, useEffect, useState, useCallback } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, useGLTF } from "@react-three/drei";
+import { Suspense, useEffect, useMemo, useRef } from "react";
+import { Canvas, useFrame, useLoader } from "@react-three/fiber";
+import { ContactShadows, Bounds } from "@react-three/drei";
+import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 import * as THREE from "three";
-import modelPath from "../assets/black_honey_-_robotic_arm.glb";
+import modelUrl from "./Rmk3.obj";
 
-function ArmLogic({ mouse, isPinching }) {
-  const baseGroup = useRef();
-  const armGroup = useRef();
-  const { scene } = useGLTF(modelPath);
-  const pinchNode = useRef(null);
+const LERP = 0.12;
+
+function classifyPart(name) {
+  if (/LEFT_GRIP|RIGHT_GRIP/i.test(name)) return "grip";
+  if (/HEAD__rotating/i.test(name)) return "headRot";
+  if (/HEAD__pith/i.test(name)) return "headPitch";
+  if (/ARM__rotating/i.test(name)) return "armRot";
+  if (/ARM__second/i.test(name)) return "armSecond";
+  if (/ARM__prime/i.test(name)) return "armPrime";
+  if (/BASE__rotating/i.test(name)) return "baseRot";
+  if (/BASE__not_moving/i.test(name)) return "baseFixed";
+  return "other";
+}
+
+function boxOf(objects) {
+  const box = new THREE.Box3();
+  objects.forEach((obj) => {
+    if (obj) box.expandByObject(obj);
+  });
+  if (box.isEmpty()) {
+    box.set(new THREE.Vector3(-0.1, 0, -0.1), new THREE.Vector3(0.1, 0.2, 0.1));
+  }
+  return box;
+}
+
+function pivotAt(worldPos) {
+  const pivot = new THREE.Group();
+  pivot.position.copy(worldPos);
+  return pivot;
+}
+
+function ArmRig({ mouse }) {
+  const joints = useRef({});
+  const obj = useLoader(OBJLoader, modelUrl);
+
+  const prepared = useMemo(() => {
+    const root = obj.clone(true);
+
+    const buckets = {
+      baseFixed: [],
+      baseRot: [],
+      armPrime: [],
+      armSecond: [],
+      armRot: [],
+      headPitch: [],
+      headRot: [],
+      grip: [],
+      other: [],
+    };
+
+    root.traverse((node) => {
+      if (!node.isMesh) return;
+      buckets[classifyPart(node.name || "")].push(node);
+      node.castShadow = true;
+      node.receiveShadow = true;
+      const mats = Array.isArray(node.material) ? node.material : [node.material];
+      mats.forEach((mat) => {
+        if (!mat) return;
+        mat.metalness = 0.45;
+        mat.roughness = 0.4;
+        mat.color = new THREE.Color("#a1a1aa");
+        mat.needsUpdate = true;
+      });
+    });
+
+    // Fit into frame: ~2.2 units tall, grounded, XZ-centered
+    root.updateMatrixWorld(true);
+    const rawBox = new THREE.Box3().setFromObject(root);
+    const size = rawBox.getSize(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z, 1);
+    root.scale.setScalar(1 / maxDim);
+    root.updateMatrixWorld(true);
+
+    const scaledBox = new THREE.Box3().setFromObject(root);
+    const mid = scaledBox.getCenter(new THREE.Vector3());
+    root.position.set(-mid.x, -scaledBox.min.y, -mid.z);
+    root.updateMatrixWorld(true);
+
+    const baseRot = buckets.baseRot;
+    const arm1 = buckets.armPrime.length ? buckets.armPrime : baseRot;
+    const arm2 = buckets.armSecond.length ? buckets.armSecond : arm1;
+    const arm3 = buckets.armRot.length ? buckets.armRot : arm2;
+    const headBits = [...buckets.headPitch, ...buckets.headRot, ...buckets.grip];
+
+    const yawBox = boxOf(baseRot.length ? baseRot : arm1);
+    const shoulderBox = boxOf(arm1);
+    const elbowBox = boxOf(arm2);
+    const wristBox = boxOf(arm3);
+    const headBox = boxOf(headBits.length ? headBits : arm3);
+
+    const yawC = yawBox.getCenter(new THREE.Vector3());
+    const shC = shoulderBox.getCenter(new THREE.Vector3());
+    const elC = elbowBox.getCenter(new THREE.Vector3());
+    const wrC = wristBox.getCenter(new THREE.Vector3());
+    const hdC = headBox.getCenter(new THREE.Vector3());
+    const shSize = shoulderBox.getSize(new THREE.Vector3());
+    const elSize = elbowBox.getSize(new THREE.Vector3());
+    const wrSize = wristBox.getSize(new THREE.Vector3());
+
+    // World-space pivots first, then .attach() so nesting keeps world transforms
+    const yawPivot = pivotAt(new THREE.Vector3(yawC.x, yawBox.min.y, yawC.z));
+    const shoulderPivot = pivotAt(new THREE.Vector3(shC.x, shoulderBox.min.y + shSize.y * 0.12, shC.z));
+    const elbowPivot = pivotAt(new THREE.Vector3(elC.x, elbowBox.min.y + elSize.y * 0.18, elC.z));
+    const wristPivot = pivotAt(new THREE.Vector3(wrC.x, wristBox.min.y + wrSize.y * 0.22, wrC.z));
+    const headPivot = pivotAt(hdC);
+
+    root.attach(yawPivot);
+    yawPivot.attach(shoulderPivot);
+    shoulderPivot.attach(elbowPivot);
+    elbowPivot.attach(wristPivot);
+    wristPivot.attach(headPivot);
+
+    const attachMeshes = (pivot, list) => {
+      list.forEach((mesh) => {
+        if (mesh.parent) pivot.attach(mesh);
+      });
+    };
+
+    // Fixed pedestal stays on root — never under yaw
+    attachMeshes(root, buckets.baseFixed);
+    attachMeshes(yawPivot, buckets.baseRot);
+    attachMeshes(shoulderPivot, buckets.armPrime);
+    attachMeshes(elbowPivot, buckets.armSecond);
+    attachMeshes(wristPivot, buckets.armRot);
+    attachMeshes(headPivot, headBits);
+    attachMeshes(yawPivot, buckets.other);
+
+    return {
+      root,
+      joints: {
+        yaw: yawPivot,
+        shoulder: shoulderPivot,
+        elbow: elbowPivot,
+        wrist: wristPivot,
+        head: headPivot,
+      },
+      counts: {
+        baseFixed: buckets.baseFixed.length,
+        baseRot: buckets.baseRot.length,
+        armPrime: buckets.armPrime.length,
+        armSecond: buckets.armSecond.length,
+        armRot: buckets.armRot.length,
+        head: headBits.length,
+      },
+    };
+  }, [obj]);
 
   useEffect(() => {
-    if (!scene || !baseGroup.current || !armGroup.current) return;
-
-    const roboarmNodes = [];
-    const baseNodes = [];
-
-    scene.traverse((node) => {
-      if (!node.isObject3D) return;
-      const name = node.name;
-      if (name.startsWith("roboarm")) {
-        roboarmNodes.push(node);
-        if (name === "roboarm_low_28") pinchNode.current = node;
-      } else if (name.startsWith("robot_base")) {
-        baseNodes.push(node);
-      }
-      if (node.isMesh) {
-        node.castShadow = true;
-        node.receiveShadow = true;
-        node.material.metalness = 0.2;
-        node.material.roughness = 0.5;
-      }
-    });
-
-    baseGroup.current.position.set(0, 0, 0);
-    baseGroup.current.rotation.set(0, 0, 0);
-    baseNodes.forEach((node) => baseGroup.current.add(node.clone()));
-
-    roboarmNodes.sort((a, b) => {
-      const aNum = parseInt(
-        a.name.match(/\d+/)?.[0] || (a.name === "roboarm_low_28" ? 999 : 0)
-      );
-      const bNum = parseInt(
-        b.name.match(/\d+/)?.[0] || (b.name === "roboarm_low_28" ? 999 : 0)
-      );
-      return aNum - bNum;
-    });
-
-    roboarmNodes.forEach((node, index) => {
-      const clonedNode = node.clone();
-      if (index === 0) {
-        baseGroup.current.add(clonedNode);
-      } else {
-        roboarmNodes[index - 1].add(clonedNode);
-      }
-      armGroup.current.add(clonedNode);
-    });
-  }, [scene]);
+    joints.current = prepared.joints;
+  }, [prepared]);
 
   useFrame(() => {
-    if (!armGroup.current || !pinchNode.current) return;
+    const j = joints.current;
+    if (!j.yaw) return;
 
-    const targetX = mouse.current.x * 2;
-    const targetY = mouse.current.y * 2;
+    const mx = mouse.current.x;
+    const my = mouse.current.y;
 
-    armGroup.current.children.forEach((part, index) => {
-      if (index === 0) return;
-      part.rotation.x = THREE.MathUtils.lerp(
-        part.rotation.x,
-        targetY * Math.PI * 0.5,
-        0.1
-      );
-      part.rotation.y = THREE.MathUtils.lerp(
-        part.rotation.y,
-        targetX * Math.PI * 0.5,
-        0.1
-      );
-    });
-
-    pinchNode.current.rotation.z = THREE.MathUtils.lerp(
-      pinchNode.current.rotation.z,
-      isPinching ? -0.5 : 0,
-      0.2
-    );
+    // Pedestal (BASE__not_moving_) stays fixed; turret + links track pointer
+    j.yaw.rotation.y = THREE.MathUtils.lerp(j.yaw.rotation.y, mx * 1.0, LERP);
+    j.shoulder.rotation.z = THREE.MathUtils.lerp(j.shoulder.rotation.z, my * 0.65, LERP);
+    j.elbow.rotation.z = THREE.MathUtils.lerp(j.elbow.rotation.z, my * 0.45 + 0.1, LERP);
+    j.wrist.rotation.z = THREE.MathUtils.lerp(j.wrist.rotation.z, -my * 0.28, LERP);
+    j.head.rotation.y = THREE.MathUtils.lerp(j.head.rotation.y, mx * 0.28, LERP);
+    j.head.rotation.x = THREE.MathUtils.lerp(j.head.rotation.x, -my * 0.2, LERP);
   });
 
   return (
-    <group>
-      <group ref={baseGroup} />
-      <group ref={armGroup} />
+    <group rotation={[0, Math.PI * 0.35, 0]} position={[0, -0.05, 0]}>
+      <primitive object={prepared.root} />
     </group>
   );
 }
 
-export default function RoboticArm() {
+function ArmScene({ mouse }) {
+  return (
+    <>
+      <ambientLight intensity={0.75} />
+      <directionalLight position={[3, 6, 4]} intensity={1.35} />
+      <directionalLight position={[-4, 2, -2]} intensity={0.55} />
+      <hemisphereLight args={["#f4f4f5", "#18181b", 0.45]} />
+      <Bounds fit clip observe margin={1.35}>
+        <ArmRig mouse={mouse} />
+      </Bounds>
+      <ContactShadows position={[0, -0.85, 0]} opacity={0.28} scale={5} blur={2.2} far={4} />
+    </>
+  );
+}
+
+/** Interactive Rmk3 arm — fixed base, arm tracks pointer. */
+export default function RoboticArm({ className = "" }) {
   const mouse = useRef({ x: 0, y: 0 });
-  const [isPinching, setIsPinching] = useState(false);
-
-  const handleMouseMove = useCallback((e) => {
-    if (!window) return; // Ensure window exists
-    mouse.current.x = (e.clientX / window.innerWidth) * 2 - 1;
-    mouse.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
-  }, []);
-
-  const handleMouseDown = useCallback((e) => {
-    if (e.button === 0) setIsPinching(true);
-  }, []);
-
-  const handleMouseUp = useCallback((e) => {
-    if (e.button === 0) setIsPinching(false);
-  }, []);
+  const wrapRef = useRef(null);
 
   useEffect(() => {
-    if (typeof window === "undefined") return; // Guard for non-browser environments
+    const el = wrapRef.current;
+    if (!el) return undefined;
 
-    const events = [
-      ["mousemove", handleMouseMove],
-      ["mousedown", handleMouseDown],
-      ["mouseup", handleMouseUp],
-    ];
-
-    events.forEach(([event, handler]) =>
-      window.addEventListener(event, handler)
-    );
-
-    return () => {
-      events.forEach(([event, handler]) =>
-        window.removeEventListener(event, handler)
-      );
+    const onMove = (e) => {
+      const rect = el.getBoundingClientRect();
+      mouse.current.x = THREE.MathUtils.clamp(((e.clientX - rect.left) / rect.width) * 2 - 1, -1, 1);
+      mouse.current.y = THREE.MathUtils.clamp(-(((e.clientY - rect.top) / rect.height) * 2 - 1), -1, 1);
     };
-  }, [handleMouseMove, handleMouseDown, handleMouseUp]);
+
+    const onLeave = () => {
+      mouse.current.x = 0;
+      mouse.current.y = 0;
+    };
+
+    el.addEventListener("pointermove", onMove);
+    el.addEventListener("pointerleave", onLeave);
+    return () => {
+      el.removeEventListener("pointermove", onMove);
+      el.removeEventListener("pointerleave", onLeave);
+    };
+  }, []);
 
   return (
-    <Canvas
-      style={{ width: "100vw", height: "100vh", backgroundColor: "black" }}
-      camera={{ position: [0, 2, 5], fov: 60, near: 0.1, far: 1000 }}
-      shadows
-      gl={{ antialias: true, alpha: true }}
-      onCreated={({ gl }) => {
-        gl.toneMapping = THREE.ACESFilmicToneMapping;
-        gl.outputColorSpace = THREE.SRGBColorSpace;
-        gl.domElement.addEventListener("webglcontextlost", (e) => {
-          console.warn("WebGL context lost, attempting to restore...");
-          e.preventDefault();
-        });
-        gl.domElement.addEventListener("webglcontextrestored", () => {
-          console.log("WebGL context restored");
-        });
-      }}
-    >
-      <ambientLight intensity={0.5} />
-      <directionalLight
-        position={[5, 10, 5]}
-        intensity={1}
-        castShadow
-        shadow-mapSize={[1024, 1024]}
-        shadow-camera={{
-          near: 0.5,
-          far: 50,
-          top: 20,
-          right: 20,
-          bottom: -20,
-          left: -20,
-        }}
-      />
-      <ArmLogic mouse={mouse} isPinching={isPinching} />
-      <OrbitControls
-        enablePan
-        enableZoom
-        enableRotate
-        minDistance={2}
-        maxDistance={10}
-      />
-    </Canvas>
+    <div ref={wrapRef} className={`relative h-full w-full touch-none ${className}`.trim()}>
+      <Canvas
+        dpr={1}
+        camera={{ position: [2.5, 1.8, 3.2], fov: 35, near: 0.05, far: 80 }}
+        gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+        style={{ background: "transparent" }}
+      >
+        <Suspense fallback={null}>
+          <ArmScene mouse={mouse} />
+        </Suspense>
+      </Canvas>
+      <p className="pointer-events-none absolute bottom-3 left-0 right-0 text-center font-cormorant text-[0.65rem] tracking-[0.22em] uppercase text-zinc-500">
+        Move to aim the arm
+      </p>
+    </div>
   );
 }

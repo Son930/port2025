@@ -1,142 +1,26 @@
-/* Animations */
-
-@keyframes multi-pulse {
-  0% {
-    opacity: 0.1;
-    transform: scale(0.98) rotateZ(0.5deg);
-    filter: blur(0px);
-  }
-  25% {
-    opacity: 0.4;
-    transform: scale(1.02) rotateZ(-0.3deg);
-    filter: blur(1px);
-  }
-  50% {
-    opacity: 0.2;
-    transform: scale(1.01) rotateZ(0.2deg);
-    filter: blur(2px);
-  }
-  75% {
-    opacity: 0.35;
-    transform: scale(0.99) rotateZ(0.1deg);
-    filter: blur(1px);
-  }
-  100% {
-    opacity: 0.1;
-    transform: scale(0.98) rotateZ(0.5deg);
-    filter: blur(0px);
-  }
+.line-mask {
+  overflow: hidden;
+  padding-bottom: 0.08em;
 }
 
-.animate-pulse-slow {
-  animation: multi-pulse 8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  transform-style: preserve-3d;
-  will-change: transform, opacity, filter;
+.hero-image-frame {
+  transition: box-shadow 0.5s ease;
 }
 
-/* Optional add-ons for different effects */
-.pulse-layer::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 50% 50%, 
-    rgba(255,255,255,0.15) 0%, 
-    transparent 70%);
-  animation: multi-pulse 8s -4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+.hero-image-frame:hover {
+  box-shadow: 0 24px 48px -28px rgba(28, 25, 23, 0.35);
 }
 
-.pulse-3d {
-  transform: perspective(1000px) rotateX(5deg) rotateY(-2deg);
-  transform-style: preserve-3d;
+.dark .hero-image-frame:hover {
+  box-shadow: 0 24px 48px -28px rgba(0, 0, 0, 0.55);
 }
 
-.pulse-3d::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: inherit;
-  transform: translateZ(-20px);
-  filter: blur(15px);
-  opacity: 0.3;
-}
-/* Custom text shadow */
-.font-superline-outline-italic {
-  text-shadow: 0 0 15px rgba(110, 231, 183, 0.3);
+.hero-tag {
+  transition: transform 0.25s ease, border-color 0.25s ease, color 0.25s ease;
 }
 
-
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
-
-/* Glitch effect styles */
-.glitch {
-  position: relative;
-  color: #0f0; /* Green for digital aesthetic */
-  font-family: 'Orbitron', monospace;
-  text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
-}
-
-.glitch:hover::before,
-.glitch:hover::after {
-  content: attr(data-text);
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.glitch:hover::before {
-  color: #f0f;
-  left: 2px;
-  animation: glitch-top 0.3s infinite linear alternate-reverse;
-}
-
-.glitch:hover::after {
-  color: #0ff;
-  left: -2px;
-  animation: glitch-bottom 0.3s infinite linear alternate-reverse;
-}
-
-@keyframes glitch-top {
-  0% {
-    transform: translate(0, 0);
-    clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%);
-  }
-  20% {
-    transform: translate(2px, -1px);
-  }
-  40% {
-    transform: translate(-2px, 1px);
-  }
-  60% {
-    transform: translate(1px, -2px);
-  }
-  80% {
-    transform: translate(-1px, 2px);
-  }
-  100% {
-    transform: translate(0, 0);
-  }
-}
-
-@keyframes glitch-bottom {
-  0% {
-    transform: translate(0, 0);
-    clip-path: polygon(0 66%, 100% 66%, 100% 100%, 0 100%);
-  }
-  20% {
-    transform: translate(-2px, 1px);
-  }
-  40% {
-    transform: translate(2px, -1px);
-  }
-  60% {
-    transform: translate(-1px, 2px);
-  }
-  80% {
-    transform: translate(1px, -2px);
-  }
-  100% {
-    transform: translate(0, 0);
-  }
+.hero-tag:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-classic);
+  color: var(--ink);
 }

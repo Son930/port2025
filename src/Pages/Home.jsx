@@ -4,30 +4,34 @@ import Skills from "../Comp/Skills";
 import Landing from "../Comp/Landing";
 import Footer from "../Comp/Footer";
 import Intro from "../Comp/Intro";
-import Mosaic from "../Comp/Mosaic";
+import BackToTop from "../Comp/BackToTop";
+import PageAtmosphere from "../Comp/PageAtmosphere";
 
 const Home = () => {
   return (
-    <div className="w-screen h-screen overflow-hidden">
+    <div className="relative w-full min-h-screen overflow-x-hidden bg-[var(--surface)]">
+      <PageAtmosphere />
       <Nav />
+      <BackToTop />
 
-      <main className="snap-y snap-mandatory overflow-y-auto overflow-x-hidden h-screen">
-        <section id="landing" className="snap-start h-screen">
+      <main className="relative z-10">
+        <section id="landing">
           <Landing />
         </section>
-        <section id="know me" className="snap-start h-screen">
+
+        <section id="know me">
           <Intro />
         </section>
-        <section id="projects" className="snap-start h-screen">
+
+        <section id="projects">
           <Projects />
         </section>
-        <section id="skills" className="snap-start h-screen">
+
+        <section id="skills">
           <Skills />
         </section>
-        <section id="mosaic" className="snap-start h-screen">
-          <Mosaic />
-        </section>
-        <section id="footer" className="snap-start h-screen">
+
+        <section id="footer">
           <Footer />
         </section>
       </main>

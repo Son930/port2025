@@ -6,13 +6,19 @@ import "./App.css";
 
 import App from "./App.jsx";
 import { BrowserRouter } from "react-router-dom";
+import { ThemeProvider } from "./context/ThemeProvider";
+import { initTheme } from "./utils/initTheme";
+
+initTheme();
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <HeroUIProvider>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+      <ThemeProvider>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </ThemeProvider>
     </HeroUIProvider>
   </StrictMode>
 );
